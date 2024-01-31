@@ -1,0 +1,124 @@
+from mcpi.minecraft import Minecraft
+from mcpi import block
+import random 
+import time
+
+#Sets up server connection
+mc = Minecraft.create("54.215.251.182", 4711)
+myId = mc.getPlayerEntityId("__Tianshi__")
+myPos = mc.entity.getPos(myId)
+
+x = myPos.x
+y = myPos.y
+z = myPos.z
+
+#----FUNCTIONS BEGIN----
+
+#Chat (Difficulty and Start) Returns a number that correlates to the game's difficulty
+def chat():
+  #Greeting
+  mc.postToChat("Welcome to Angel's Parkour Course")
+  mc.postToChat("Please select your difficulty (1 = easy, 2 = medium, 3 = hard)")
+
+  #Waiting for response
+  responded = False
+  while (not responded):
+    chatEvents = mc.events.pollChatPosts()
+    for chatEvent in chatEvents:
+      response = chatEvent.message
+      if (response == "1"):
+        mc.postToChat("You chose easy mode!")
+        return 1
+      elif (response == "2"):
+        mc.postToChat("You chose medium mode!")
+        return 2
+      elif (response == "3"):
+        mc.postToChat("You chose hard mode!")
+        return 3
+      else:
+        mc.postToChat("That's not a valid response")
+        mc.postToChat("Please select your difficulty (1 = easy, 2 = medium, 3 = hard)")
+
+        
+#Spawns a 5x5 platform underneath you
+def spawnPlatform(x,y,z):
+  mc.setBlocks(x-5, y, z-5, x+5, y, z+5, block.SANDSTONE.id)
+
+#Spawn a wall on both sides
+def spawnWalls(x,y,z, choice):
+  for i in range(20):
+    for j in range (100):
+      randomWall = random.choice([block.GLOWSTONE_BLOCK.id, block.OBSIDIAN.id])
+      mc.setBlock(x+5 + j, y-5 + i, z-5, randomWall)
+
+  for i in range(20):
+    for j in range(100):
+      randomWall = random.choice([block.GLOWSTONE_BLOCK.id, block.OBSIDIAN.id])
+      mc.setBlock(x+5 + j, y-5 + i, z + 5, randomWall)
+
+#Parkour Course 
+def spawnCourse(x,y,z, choice):
+  blockType = 0
+  if (choice == 1):
+    blockType = block.MELON.id
+  elif (choice == 2):
+    blockType = block.ICE.id
+  elif (choice == 3):
+    blockType = block.CACTUS.id
+
+  for i in range(1, 50):
+    mc.setBlock(x, y, z, blockType)
+    z = myPos.z
+    x = x + random.randint(1, 3)
+    y = y + random.randint(-2, 1)
+    z = z + random.randint(-2, 2)
+    
+    if i == 49:
+      mc.setBlocks(x-3, y, z-3, x+3, y, z+3, block.SANDSTONE.id)
+
+#Spawns lava
+def spawnLava(x,y,z):
+  a = 0
+  current20 = 0
+  starting = myPos.y
+  while a < 100:
+    #Update currentY
+    currentHeight = mc.entity.getPos(myId).y
+    #Spawns lava
+    print(current20)
+    time.sleep(0.2)
+    current20 = current20 + 1
+
+    for i in range (50):
+      for j in range (9):
+        #1, 2, 3,...60
+        mc.setBlock(x-5 + a, y+14-i, z-4+j, block.LAVA.id)
+    time.sleep(1)
+    a = a + 1
+    #Deletes back lava
+    for i in range(50):
+      for j in range(9):
+        mc.setBlock(x-6 + a, y+14-i, z-4+j,block.AIR.id)
+    
+    #If they fall too low they lose
+    if(currentHeight < starting - 80):
+      mc.postToChat("... you lost")
+      break
+      
+
+    #clearing falling lava
+    for i in range (100):
+      for j in range (12):
+        for k in range (15):
+          mc.setBlock(x-6 + i, y-101 + k, z-5 + j, block.AIR.id)
+
+  return current20
+#----FUNCTIONS END----
+
+#Game Organization
+choice = chat()
+spawnPlatform(x,y,z)
+spawnWalls(x,y,z, choice)
+spawnCourse(x,y,z, choice)
+mc.postToChat("Turn around!!!")
+spawnLava(x,y,z)
